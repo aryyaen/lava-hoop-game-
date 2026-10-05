@@ -1,2 +1,2 @@
 # lava-hoop-game-
-as we hit the lava we will die 
+You control a small blocky animal wearing a helmet. Your goal is to keep hopping forward, one tile at a time, while surviving an increasingly dangerous environment.
