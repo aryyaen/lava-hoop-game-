@@ -137,9 +137,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d0200;font-family:
   <div class="tres" id="t-restart">↺ RESTART</div>
 </div>
 
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js"}}</script>
-<script type="module">
-import * as THREE from 'three';
+<script src="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.min.js"></script>
+<script>
+if(!window.THREE){
+  document.write('<script src="https://unpkg.com/three@0.169.0/build/three.min.js"><\\/script>');
+}
+</script>
 
 // ═══════════════════════════════════════════════════
 //  CONSTANTS & GRID CONFIG
