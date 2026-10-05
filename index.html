@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lava Hop — Penguin's Great Escape</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#0d0200;font-family:'Segoe UI',system-ui,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none}
+#c{display:block;width:100%;height:100%}
+
+/* HUD */
+#hud{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:10}
+#score-bar{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px;gap:10px}
+.hp{background:rgba(10,2,0,.68);backdrop-filter:blur(10px);border:1.5px solid rgba(255,130,0,.35);border-radius:14px;padding:7px 15px;color:#fff;display:flex;flex-direction:column;align-items:center;min-width:68px;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.hl{font-size:9px;font-weight:800;letter-spacing:2.5px;color:#FF9500;text-transform:uppercase;margin-bottom:2px}
+.hv{font-size:22px;font-weight:900;line-height:1;color:#fff;text-shadow:0 0 10px rgba(255,160,0,.8)}
+.pb{font-size:9px;font-weight:800;color:#FFD700;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:none}
+
+/* Mode pill */
+#mode-pill{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:rgba(255,80,0,.25);backdrop-filter:blur(8px);border:1px solid rgba(255,140,0,.5);border-radius:20px;padding:4px 14px;color:#FFB060;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;pointer-events:none;z-index:11}
+
+/* Combo Banner */
+#combo-disp{position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:20;text-align:center;opacity:0;transition:opacity .25s,transform .2s}
+.ct{font-size:52px;font-weight:900;color:#FFD700;text-shadow:0 0 25px #FF6600,0 5px 0 rgba(0,0,0,.7);-webkit-text-stroke:2px #CC4400;letter-spacing:3px}
+.cs{font-size:18px;font-weight:800;color:#FFA060;letter-spacing:4px;text-transform:uppercase;margin-top:4px;text-shadow:0 0 8px rgba(0,0,0,.8)}
+
+/* Popups */
+#pops{position:fixed;inset:0;pointer-events:none;z-index:15;overflow:hidden}
+.pop{position:absolute;font-weight:900;pointer-events:none;white-space:nowrap;animation:pr .95s cubic-bezier(0.1,0.8,0.3,1) forwards}
+@keyframes pr{0%{opacity:0;transform:translateY(15px) scale(0.7)}18%{opacity:1;transform:translateY(0) scale(1.15)}65%{opacity:1;transform:translateY(-50px) scale(1)}100%{opacity:0;transform:translateY(-110px) scale(0.75)}}
+
+/* Near miss & Slow-mo */
+#nm-flash{position:fixed;inset:0;pointer-events:none;z-index:8;background:radial-gradient(ellipse at center,rgba(255,200,0,.45) 0%,transparent 70%);opacity:0;transition:opacity .08s}
+#slomo{position:fixed;inset:0;pointer-events:none;z-index:7;border:3px solid rgba(255,220,0,.6);opacity:0;transition:opacity .15s;box-shadow:inset 0 0 50px rgba(255,160,0,.35)}
+
+/* Danger bar */
+#danger-bar{position:fixed;bottom:0;left:0;height:6px;background:#FF3300;box-shadow:0 0 12px #FF3300;z-index:10;width:0%;opacity:0;transition:width .25s}
+#danger-warn{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(255,0,0,.75);color:#fff;font-weight:900;font-size:12px;letter-spacing:2px;padding:3px 12px;border-radius:10px;pointer-events:none;opacity:0;transition:opacity .2s;z-index:11}
+
+/* Menu */
+#menu{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .4s;overflow:auto;padding:20px}
+#menu::before{content:'';position:fixed;inset:0;background:linear-gradient(160deg,#150300 0%,#3d0c00 45%,#120200 100%);z-index:-1}
+#menu.hidden{opacity:0;pointer-events:none}
+.mtitle{font-size:clamp(38px,9vw,80px);font-weight:900;color:#FF6600;text-shadow:0 0 35px #FF3300,0 0 70px #FF6600;letter-spacing:5px;margin-bottom:4px;-webkit-text-stroke:2px #FF3300;line-height:1}
+.msub{font-size:clamp(12px,2.8vw,18px);color:#FFA060;letter-spacing:7px;margin-bottom:28px;text-transform:uppercase}
+.mbtn{background:linear-gradient(135deg,#FF6600,#FF2200);border:none;border-radius:18px;color:#fff;font-size:clamp(15px,3vw,21px);font-weight:800;padding:15px 44px;cursor:pointer;letter-spacing:2px;margin:7px;box-shadow:0 0 22px rgba(255,100,0,.65),0 5px 0 rgba(0,0,0,.5);transition:transform .12s,box-shadow .12s;text-transform:uppercase;min-width:220px}
+.mbtn:hover{transform:scale(1.06);box-shadow:0 0 35px rgba(255,100,0,.95),0 5px 0 rgba(0,0,0,.5)}
+.mbtn:active{transform:scale(0.97)}
+.mbtn.sec{background:linear-gradient(135deg,#3a3a3a,#1a1a1a);box-shadow:0 0 10px rgba(255,100,0,.25),0 5px 0 rgba(0,0,0,.5)}
+.mbtn.sec:hover{box-shadow:0 0 22px rgba(255,100,0,.5),0 5px 0 rgba(0,0,0,.5)}
+.dbox{background:rgba(255,100,0,.14);border:2px solid rgba(255,160,0,.4);border-radius:14px;padding:12px 22px;margin-bottom:16px;text-align:center;color:#FFA060;font-size:13px;letter-spacing:1px;max-width:340px;width:100%}
+.dbox strong{color:#FFD700;display:block;font-size:17px;margin-bottom:3px;letter-spacing:2px}
+.hint{color:#884422;font-size:12px;margin-top:20px;letter-spacing:1.5px;text-align:center}
+
+/* Game Over */
+#gover{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.88);z-index:90;opacity:0;pointer-events:none;transition:opacity .35s;padding:20px}
+#gover.vis{opacity:1;pointer-events:all}
+.got{font-size:clamp(42px,9vw,84px);font-weight:900;color:#FF2200;text-shadow:0 0 35px #FF5500;-webkit-text-stroke:2px #AA1100;letter-spacing:5px;animation:shk .5s ease}
+@keyframes shk{0%,100%{transform:rotate(0)}20%{transform:rotate(-3deg)}40%{transform:rotate(3deg)}60%{transform:rotate(-2deg)}80%{transform:rotate(2deg)}}
+.gos{font-size:clamp(17px,4vw,30px);color:#fff;margin:8px 0;font-weight:700}
+.gos span{color:#FFD700;font-size:1.35em}
+.gocause{font-size:14px;color:#FF8866;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.goh{font-size:13px;color:#888;margin-top:10px;letter-spacing:2px;text-transform:uppercase}
+
+/* Touch controls */
+#touch{position:fixed;bottom:0;left:0;width:100%;display:none;pointer-events:none;z-index:12;padding:16px}
+#touch.vis{display:flex;justify-content:space-between;align-items:flex-end}
+.tpad{display:grid;grid-template-columns:58px 58px 58px;grid-template-rows:58px 58px;gap:7px;pointer-events:auto}
+.tbtn{background:rgba(255,100,0,.3);backdrop-filter:blur(6px);border:2px solid rgba(255,160,0,.5);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .08s,transform .08s}
+.tbtn:active,.tbtn.act{background:rgba(255,160,0,.65);transform:scale(0.93)}
+.tu{grid-column:2;grid-row:1}.tl{grid-column:1;grid-row:2}.td{grid-column:2;grid-row:2}.tr{grid-column:3;grid-row:2}
+.tres{pointer-events:auto;background:rgba(200,30,0,.45);border:2px solid rgba(255,80,0,.6);border-radius:14px;padding:12px 24px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;letter-spacing:1.5px;align-self:flex-end}
+
+/* Responsive */
+@media(max-width:520px){.hv{font-size:18px}.mbtn{padding:12px 30px;font-size:15px}}
+@media(orientation:landscape) and (max-height:480px){
+  #score-bar{padding:6px 12px}
+  .hp{padding:4px 10px;min-width:54px}.hv{font-size:16px}.hl{font-size:8px}
+  #touch.vis{padding:8px}
+  .tbtn{width:46px;height:46px;font-size:18px}.tpad{gap:4px;grid-template-columns:46px 46px 46px;grid-template-rows:46px 46px}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="score-bar">
+    <div class="hp"><div class="hl">Score</div><div class="hv" id="h-score">0</div></div>
+    <div class="hp"><div class="hl">Combo</div><div class="hv" id="h-combo">x1</div></div>
+    <div class="hp"><div class="hl">Coins</div><div class="hv" id="h-coins">0</div></div>
+    <div class="hp"><div class="hl">Best</div><div class="hv" id="h-best">0</div><div class="pb" id="h-pb">NEW!</div></div>
+  </div>
+</div>
+<div id="mode-pill" style="display:none">🌋 DAILY CHALLENGE</div>
+<div id="combo-disp"><div class="ct" id="ct"></div><div class="cs" id="cs"></div></div>
+<div id="pops"></div>
+<div id="nm-flash"></div>
+<div id="danger-bar"></div>
+<div id="danger-warn">⚠️ DANGER APPROACHING!</div>
+<div id="slomo"></div>
+
+<!-- MENU -->
+<div id="menu">
+  <div class="mtitle">🐧 LAVA HOP</div>
+  <div class="msub">Penguin's Great Escape</div>
+  <div class="dbox"><strong id="dtitle">DAILY CHALLENGE</strong><span id="ddate"></span></div>
+  <button class="mbtn" id="btn-play">▶ PLAY ENDLESS</button>
+  <button class="mbtn" id="btn-daily">🌋 DAILY CHALLENGE</button>
+  <button class="mbtn sec" id="btn-ctrl">Controls & Rules</button>
+  <div class="hint">Arrow Keys / WASD · R to restart · Tap or Swipe on mobile</div>
+</div>
+
+<!-- GAME OVER -->
+<div id="gover">
+  <div class="got">RUN OVER!</div>
+  <div class="gocause" id="go-cause">CRUSHED BY CAR</div>
+  <div class="gos">Score: <span id="go-sc">0</span></div>
+  <div class="gos" style="font-size:.82em">Coins: <span id="go-co" style="color:#FFD700">0</span></div>
+  <div class="gos" id="go-pb" style="display:none;color:#FFD700;font-size:0.85em">🏆 NEW PERSONAL BEST!</div>
+  <div class="gos" id="go-dl" style="display:none;font-size:.78em">Daily Best: <span id="go-db">0</span></div>
+  <button class="mbtn" style="margin-top:16px" id="go-again">▶ PLAY AGAIN</button>
+  <button class="mbtn sec" id="go-menu">Menu</button>
+  <div class="goh">Press R to restart instantly</div>
+</div>
+
+<!-- TOUCH CONTROLS -->
+<div id="touch">
+  <div class="tpad">
+    <div class="tbtn tu" data-d="up">↑</div>
+    <div class="tbtn tl" data-d="left">←</div>
+    <div class="tbtn td" data-d="down">↓</div>
+    <div class="tbtn tr" data-d="right">→</div>
+  </div>
+  <div class="tres" id="t-restart">↺ RESTART</div>
+</div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+
+// ═══════════════════════════════════════════════════
+//  CONSTANTS & GRID CONFIG
+// ═══════════════════════════════════════════════════
+const TW = 9;          // tile width (world units: -4 to +4)
+const TS = 1;          // tile depth step (1 tile forward = +1 in Z)
+const IDLE_T = 6.0;    // idle timeout seconds before magma predator swoops
+const HOP_SPEED = 7.2; // hop animation speed
+const CAM_LERP = 6.5;
+const TRAIL_KILL = 14; // player falling too far behind max progress dies to lava surge
+
+// ═══════════════════════════════════════════════════
+//  DETERMINISTIC SEEDED RNG
+// ═══════════════════════════════════════════════════
+class RNG {
+  constructor(s){ this.s = (s ^ 0xDEADBEEF) >>> 0; }
+  next(){
+    this.s ^= this.s << 13; this.s ^= this.s >> 17; this.s ^= this.s << 5;
+    return (this.s >>> 0) / 4294967296;
+  }
+  int(a,b){ return Math.floor(this.next() * (b - a + 1)) + a; }
+  pick(a){ return a[Math.floor(this.next() * a.length)]; }
+  bool(p=0.5){ return this.next() < p; }
+}
+let rng = new RNG(1);
+
+function dailySeed(){
+  const d = new Date();
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+function dailyKey(){
+  const d = new Date();
+  return `lvhop_d_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
+}
+
+// ═══════════════════════════════════════════════════
+//  SYNTHESIZED AUDIO (Web Audio API)
+// ═══════════════════════════════════════════════════
+let ctx = null;
+
+// ─── USER CUSTOM DEATH AUDIO CLIP ─────────────────
+const CUSTOM_DEATH_AUDIO_DATA = 'death_sound.mp3';
+let customDeathAudio = null;
+let customDeathBuffer = null;
+let activeDeathSource = null;
+
+function initCustomDeathAudio(){
+  try {
+    if(!customDeathAudio){
+      customDeathAudio = new Audio(CUSTOM_DEATH_AUDIO_DATA);
+      customDeathAudio.preload = 'auto';
+      customDeathAudio.volume = 1.0;
+    }
+  } catch(e){}
+
+  if(ctx && !customDeathBuffer){
+    try {
+      fetch(CUSTOM_DEATH_AUDIO_DATA)
+        .then(r => r.arrayBuffer())
+        .then(ab => ctx.decodeAudioData(ab))
+        .then(decoded => { customDeathBuffer = decoded; })
+        .catch(err => console.log('Audio decode fallback to Audio tag'));
+    } catch(e){}
+  }
+}
+
+function playCustomDeathSound(){
+  stopMusic();
+
+  if(activeDeathSource){
+    try { activeDeathSource.stop(); } catch(e){}
+    activeDeathSource = null;
+  }
+
+  // Priority 1: Web Audio Buffer (Zero latency, perfectly synchronized)
+  if(ctx && customDeathBuffer){
+    try {
+      const src = ctx.createBufferSource();
+      src.buffer = customDeathBuffer;
+      const g = ctx.createGain();
+      g.gain.value = 1.0;
+      src.connect(g);
+      g.connect(ctx.destination);
+      src.start(0);
+      activeDeathSource = src;
+      return;
+    } catch(e){}
+  }
+
+  // Priority 2: HTML5 Audio element fallback
+  if(customDeathAudio){
+    try {
+      customDeathAudio.currentTime = 0;
+      customDeathAudio.volume = 1.0;
+      customDeathAudio.play().catch(e => {});
+    } catch(e){}
+  }
+}
+
+function initAudio(){
+  initCustomDeathAudio();
+  if(ctx) {
+    if(ctx.state === 'suspended') ctx.resume();
+    return;
+  }
+  try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+}
+function tone(freq, type, dur, vol=0.22, delay=0){
+  if(!ctx) return;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.connect(g); g.connect(ctx.destination);
+  o.type = type;
+  const t0 = ctx.currentTime + delay;
+  o.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(vol, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.start(t0); o.stop(t0 + dur + 0.01);
+}
+
+function noise(dur, vol=0.18, lpFreq=800, delay=0){
+  if(!ctx) return;
+  const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0; i<d.length; i++) d[i] = (Math.random() - 0.5) * 2;
+  const s = ctx.createBufferSource(); s.buffer = buf;
+  const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lpFreq;
+  const g = ctx.createGain();
+  const t0 = ctx.currentTime + delay;
+  g.gain.setValueAtTime(vol, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  s.connect(f); f.connect(g); g.connect(ctx.destination);
+  s.start(t0);
+}
+
+function snd(type){
+  if(!ctx) return;
+  switch(type){
+    case 'hop':
+      tone(320, 'sine', 0.1, 0.22);
+      tone(560, 'sine', 0.08, 0.14, 0.03);
+      break;
+    case 'land':
+      noise(0.08, 0.18, 550);
+      tone(170, 'triangle', 0.08, 0.15);
+      break;
+    case 'coin':
+      [750, 950, 1200, 1550].forEach((f, i) => tone(f, 'triangle', 0.12, 0.18, i * 0.05));
+      break;
+    case 'miss':
+      tone(180, 'sawtooth', 0.35, 0.3);
+      tone(90, 'sine', 0.3, 0.25, 0.08);
+      break;
+    case 'death_hit':
+      tone(420, 'square', 0.3, 0.45);
+      tone(120, 'sawtooth', 0.6, 0.35, 0.05);
+      noise(0.5, 0.35, 450);
+      break;
+    case 'death_lava':
+      noise(0.65, 0.28, 250);
+      tone(300, 'sawtooth', 0.4, 0.25);
+      tone(120, 'sine', 0.7, 0.3, 0.1);
+      break;
+    case 'train_warn':
+      tone(660, 'square', 0.09, 0.25);
+      tone(880, 'square', 0.09, 0.25, 0.12);
+      break;
+    case 'train_pass':
+      noise(0.6, 0.45, 300);
+      tone(160, 'sawtooth', 0.5, 0.25);
+      break;
+    case 'raptor_screech':
+      tone(900, 'sawtooth', 0.4, 0.35);
+      tone(1400, 'sine', 0.3, 0.25, 0.05);
+      noise(0.4, 0.25, 1200);
+      break;
+    case 'risky':
+      tone(500, 'triangle', 0.15, 0.25);
+      tone(750, 'triangle', 0.15, 0.25, 0.08);
+      break;
+  }
+}
+
+// Background music track using procedural Web Audio
+let musicTimer = null;
+function startMusic(){
+  stopMusic();
+  if(!ctx) return;
+  const bassNotes = [75, 0, 75, 95, 0, 75, 115, 0, 75, 0, 75, 85, 0, 105, 75, 0];
+  let step = 0;
+  function tick(){
+    if(!ctx || state !== 'play') return;
+    const f = bassNotes[step % bassNotes.length];
+    if(f > 0) tone(f, 'triangle', 0.18, 0.06);
+    if(step % 4 === 2) noise(0.04, 0.03, 1500); // subtle hi-hat
+    step++;
+    musicTimer = setTimeout(tick, 175);
+  }
+  tick();
+}
+function stopMusic(){
+  if(musicTimer){ clearTimeout(musicTimer); musicTimer = null; }
+}
+
+// ═══════════════════════════════════════════════════
+//  THREE.JS SCENE SETUP
+// ═══════════════════════════════════════════════════
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreference: 'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0e0200);
+scene.fog = new THREE.FogExp2(0x280500, 0.05);
+
+const cam = new THREE.PerspectiveCamera(54, innerWidth / innerHeight, 0.1, 70);
+cam.position.set(0, 8.5, -5.5);
+cam.lookAt(0, 0, 1.5);
+
+const clock = new THREE.Clock();
+
+// Lighting
+const amb = new THREE.AmbientLight(0xFF6530, 0.65);
+scene.add(amb);
+
+const sun = new THREE.DirectionalLight(0xFFAA65, 1.35);
+sun.position.set(5, 14, -4);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -16; sun.shadow.camera.right = 16;
+sun.shadow.camera.top = 16; sun.shadow.camera.bottom = -16;
+sun.shadow.camera.far = 45; sun.shadow.bias = -0.0012;
+scene.add(sun);
+
+const lavaLight = new THREE.PointLight(0xFF4400, 1.2, 12);
+lavaLight.position.set(0, 0.5, 0);
+scene.add(lavaLight);
+
+window.addEventListener('resize', () => {
+  cam.aspect = innerWidth / innerHeight;
+  cam.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+renderer.setSize(innerWidth, innerHeight);
+
+// Scene layer groups
+const worldG = new THREE.Group(); scene.add(worldG);
+const lavaG = new THREE.Group(); scene.add(lavaG);
+const vehicleG = new THREE.Group(); scene.add(vehicleG);
+
+// ═══════════════════════════════════════════════════
+//  MATERIALS
+// ═══════════════════════════════════════════════════
+function lm(c, e, ei=0, t=false, o=1){
+  const m = new THREE.MeshLambertMaterial({color: c});
+  if(e !== undefined){ m.emissive = new THREE.Color(e); m.emissiveIntensity = ei; }
+  if(t){ m.transparent = true; m.opacity = o; }
+  return m;
+}
+
+const MAT = {
+  grass:    lm(0x427524),
+  grassSide:lm(0x2d5218),
+  dirt:     lm(0x5a3418),
+  road:     lm(0x242424),
+  roadMark: lm(0xFFFF88, 0x888800, 0.35),
+  railBed:  lm(0x484848),
+  sleeper:  lm(0x4a2e16),
+  rail:     lm(0x9a9a9a),
+  lava:     lm(0xEE3300, 0xFF2200, 0.9),
+  lavaHot:  lm(0xFFAA00, 0xFFDD00, 1.4),
+  rock:     lm(0x555555),
+  basalt:   lm(0x282828),
+  log:      lm(0x6b3f19),
+  logRing:  lm(0x8a5826),
+  wheel:    lm(0x181818),
+  wind:     lm(0x88CCFF, 0x114499, 0.35, true, 0.8),
+  trainB:   lm(0x881818, 0x330000, 0.25),
+  trainW:   lm(0xAACCFF, 0x223399, 0.45, true, 0.85),
+  coin:     lm(0xFFDD00, 0xCC9900, 0.6),
+  coinIn:   lm(0xFFAA00, 0xFF6600, 0.5),
+  glow:     lm(0xFF5500, 0xFF3300, 1.6, true, 0.65),
+  pengB:    lm(0x111111),
+  pengW:    lm(0xFFF3DD),
+  pengBk:   lm(0xFF8800),
+  eyeW:     lm(0xFFFFFF, 0x999999, 0.25),
+  eyeP:     lm(0x111133),
+  helm:     lm(0xFFCC00, 0x997700, 0.3),
+  helmV:    lm(0x55CCFF, 0x114499, 0.45, true, 0.75),
+  helmS:    lm(0xEE2200, 0xAA1100, 0.35),
+  dust:     lm(0xd0c8a8),
+  lavaDust: lm(0xFF6600, 0xFF3300, 0.85),
+  sign:     lm(0xFFCC00, 0x997700, 0.5),
+  lightRed: lm(0xFF1100, 0xFF0000, 2.5),
+  lightOff: lm(0x330000),
+  raptorB:  lm(0x2a0804, 0x551100, 0.4),
+  raptorW:  lm(0xFF4400, 0xFF2200, 1.2),
+  raptorEye:lm(0xFFFF00, 0xFFAA00, 2.0),
+  shadow:   lm(0x000000, 0x000000, 0, true, 0.45),
+};
+
+const carColors = [0xCC2200, 0x1E40BA, 0x1B9E3D, 0xD4B000, 0xD15400, 0x7E2F8E, 0xA61858, 0x188CA6];
+const truckColors = [0x783C1A, 0x1B7A3C, 0x1E3C7A, 0x5C3800, 0x1E5C38];
+
+function box(w, h, d, mat){ const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.castShadow = true; return m; }
+function cyl(rt, rb, h, s, mat){ const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, s), mat); m.castShadow = true; return m; }
+function dodec(r, d, mat){ const m = new THREE.Mesh(new THREE.DodecahedronGeometry(r, d), mat); m.castShadow = true; return m; }
+
+// ═══════════════════════════════════════════════════
+//  CHARACTER: CUTE BLOCKY PENGUIN IN A TINY HELMET
+// ═══════════════════════════════════════════════════
+function makePenguin(){
+  const g = new THREE.Group();
+
+  // Torso / Body
+  const body = box(0.44, 0.52, 0.4, MAT.pengB);
+  body.position.y = 0.26;
+  g.add(body);
+
+  // White belly
+  const belly = box(0.28, 0.32, 0.05, MAT.pengW);
+  belly.position.set(0, 0.24, 0.21);
+  g.add(belly);
+
+  // Head
+  const head = box(0.38, 0.36, 0.36, MAT.pengB);
+  head.position.y = 0.62;
+  g.add(head);
+
+  // Face patch
+  const face = box(0.22, 0.22, 0.04, MAT.pengW);
+  face.position.set(0, 0.61, 0.19);
+  g.add(face);
+
+  // Eyes (white + pupil)
+  for(const x of [-0.08, 0.08]){
+    const ew = box(0.08, 0.08, 0.04, MAT.eyeW);
+    ew.position.set(x, 0.66, 0.19); g.add(ew);
+    const ep = box(0.04, 0.04, 0.04, MAT.eyeP);
+    ep.position.set(x, 0.66, 0.21); g.add(ep);
+  }
+
+  // Beak
+  const beak = box(0.1, 0.065, 0.1, MAT.pengBk);
+  beak.position.set(0, 0.585, 0.22);
+  g.add(beak);
+
+  // Flippers / Wings
+  g.userData.flippers = [];
+  for(const x of [-0.3, 0.3]){
+    const fl = box(0.1, 0.28, 0.08, MAT.pengB);
+    fl.position.set(x, 0.26, 0);
+    fl.rotation.z = x < 0 ? 0.25 : -0.25;    g.add(fl);
+    g.userData.flippers.push(fl);
+  }
+
+  // Feet
+  for(const x of [-0.1, 0.1]){
+    const ft = box(0.12, 0.065, 0.18, MAT.pengBk);
+    ft.position.set(x, 0.032, 0.04);
+    g.add(ft);
+  }
+
+  // TINY HELMET
+  const helm = box(0.44, 0.21, 0.4, MAT.helm);
+  helm.position.set(0, 0.85, 0);
+  g.add(helm);
+  g.userData.helmet = helm;
+
+  // Helmet visor
+  const visor = box(0.32, 0.11, 0.06, MAT.helmV);
+  visor.position.set(0, 0.81, 0.205);
+  g.add(visor);
+
+  // Helmet center stripe
+  const stripe = box(0.44, 0.04, 0.04, MAT.helmS);
+  stripe.position.set(0, 0.89, 0);
+  g.add(stripe);
+
+  // Tiny helmet rivets
+  for(const x of [-0.16, 0.16]){
+    const riv = box(0.05, 0.05, 0.04, MAT.helmS);
+    riv.position.set(x, 0.85, -0.2);
+    g.add(riv);
+  }
+
+  // Ground shadow
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), MAT.shadow);
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = 0.015;
+  g.add(shadow);
+  g.userData.shadow = shadow;
+
+  return g;
+}
+
+// ═══════════════════════════════════════════════════
+//  VEHICLES (CARS, TRUCKS, TRAINS)
+// ═══════════════════════════════════════════════════
+function makeWheel(x, y, z, target){
+  const w = cyl(0.12, 0.12, 0.09, 8, MAT.wheel);
+  w.rotation.z = Math.PI / 2;
+  w.position.set(x, y, z);
+  target.add(w);
+  return w;
+}
+
+function makeCar(colorIdx){
+  const g = new THREE.Group();
+  const mat = lm(carColors[colorIdx % carColors.length]);
+  // Body (Front at +Z, width along X, length along Z)
+  const bd = box(0.56, 0.3, 0.96, mat); bd.position.y = 0.27; g.add(bd);
+  const cb = box(0.48, 0.25, 0.52, mat); cb.position.set(0, 0.5, -0.04); g.add(cb);
+  const wf = box(0.4, 0.17, 0.04, MAT.wind); wf.position.set(0, 0.51, 0.23); g.add(wf);
+  const wr = box(0.4, 0.17, 0.04, MAT.wind); wr.position.set(0, 0.51, -0.31); g.add(wr);
+  for(const [x,y,z] of [[0.32,0.13,0.34],[-0.32,0.13,0.34],[0.32,0.13,-0.34],[-0.32,0.13,-0.34]]) makeWheel(x,y,z,g);
+  // Headlights
+  const hl = box(0.12, 0.07, 0.04, lm(0xFFFFCC, 0xFFFF88, 2.5)); hl.position.set(0, 0.27, 0.49); g.add(hl);
+  // Taillights
+  const tl = box(0.12, 0.07, 0.04, lm(0xFF2200, 0xFF0000, 1.8)); tl.position.set(0, 0.27, -0.49); g.add(tl);
+  return g;
+}
+
+function makeTruck(colorIdx){
+  const g = new THREE.Group();
+  const mat = lm(truckColors[colorIdx % truckColors.length]);
+  const cab = box(0.62, 0.5, 0.54, mat); cab.position.set(0, 0.35, 0.54); g.add(cab);
+  const win = box(0.52, 0.2, 0.04, MAT.wind); win.position.set(0, 0.46, 0.82); g.add(win);
+  const trl = box(0.64, 0.46, 1.15, mat); trl.position.set(0, 0.28, -0.38); g.add(trl);
+  for(const [x,y,z] of [[0.36,0.13,0.54],[-0.36,0.13,0.54],[0.36,0.13,-0.1],[-0.36,0.13,-0.1],[0.36,0.13,-0.68],[-0.36,0.13,-0.68]]) makeWheel(x,y,z,g);
+  const hl = box(0.14, 0.08, 0.04, lm(0xFFFFCC, 0xFFFF88, 2.5)); hl.position.set(0, 0.35, 0.82); g.add(hl);
+  return g;
+}
+
+function makeTrain(){
+  const g = new THREE.Group();
+  for(const off of [-0.95, 0.95]){
+    const bd = box(0.72, 0.56, 1.8, MAT.trainB); bd.position.set(0, 0.38, off); g.add(bd);
+    const rf = box(0.7, 0.1, 1.76, lm(0x550e0e)); rf.position.set(0, 0.69, off); g.add(rf);
+    for(let wz = -0.6; wz <= 0.6; wz += 0.4){
+      for(const wx of [-0.39, 0.39]){
+        const w = box(0.04, 0.16, 0.22, MAT.trainW); w.position.set(wx, 0.46, off + wz); g.add(w);
+      }
+    }
+    for(const [x,y,z] of [[0.41,0.1,off-0.65],[-0.41,0.1,off-0.65],[0.41,0.1,off+0.65],[-0.41,0.1,off+0.65]]){
+      const w = cyl(0.1, 0.1, 0.08, 8, MAT.wheel); w.rotation.z = Math.PI / 2; w.position.set(x,y,z); g.add(w);
+    }
+  }
+  const con = box(0.12, 0.08, 0.35, MAT.rail); con.position.set(0, 0.32, 0); g.add(con);
+  // Train headlights on front engine
+  const hl = box(0.25, 0.12, 0.05, lm(0xFFFF88, 0xFFFF00, 3.0));
+  hl.position.set(0, 0.45, 1.86); g.add(hl);
+  return g;
+}
+
+// ═══════════════════════════════════════════════════
+//  COLLECTIBLE COIN
+// ═══════════════════════════════════════════════════
+function makeCoin(){
+  const g = new THREE.Group();
+  const outer = cyl(0.18, 0.18, 0.06, 8, MAT.coin); g.add(outer);
+  const inner = cyl(0.1, 0.1, 0.08, 8, MAT.coinIn); g.add(inner);
+  const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.065, 0), lm(0xFFEE00, 0xFFAA00, 1.2)); g.add(star);
+  g.rotation.x = Math.PI / 2;
+  return g;
+}
+
+// ═══════════════════════════════════════════════════
+//  SAFE LAVA PLATFORMS (ROCK, BASALT, LOG)
+// ═══════════════════════════════════════════════════
+function makePlatform(type, small=false){
+  const sc = small ? 0.72 : 1.0;
+  const g = new THREE.Group();
+  g.userData.type = type;
+
+  if(type === 'log'){
+    // Drifting wooden log
+    const log = cyl(0.22 * sc, 0.25 * sc, 0.9 * sc, 7, MAT.log);
+    log.rotation.z = Math.PI / 2;
+    log.position.y = 0.08;
+    g.add(log);
+    // Tree ring ends
+    for(const off of [0.46 * sc, -0.46 * sc]){
+      const r = cyl(0.21 * sc, 0.21 * sc, 0.04, 7, MAT.logRing);
+      r.rotation.z = Math.PI / 2;
+      r.position.set(off, 0.08, 0);
+      g.add(r);
+    }
+    g.userData.halfW = 0.45 * sc;
+  } else if(type === 'basalt'){
+    // Stepping basalt slab
+    const s = 0.26 * sc;
+    const slab = dodec(s, 1, MAT.basalt);
+    slab.position.y = 0.08;
+    slab.scale.set(1.1, 0.45, 1.1);
+    g.add(slab);
+    g.userData.halfW = 0.34 * sc;
+  } else {
+    // Volcanic stepping rock with glowing magma cracks
+    const s = 0.3 * sc;
+    const r = dodec(s, 1, MAT.rock);
+    r.position.y = 0.08;
+    r.scale.set(1.15, 0.48, 1.15);
+    g.add(r);
+    const gl = new THREE.Mesh(new THREE.BoxGeometry(s * 1.1, 0.015, s * 1.1), MAT.glow.clone());
+    gl.position.y = 0.12;
+    g.add(gl);
+    g.userData.glowMesh = gl;
+    g.userData.halfW = 0.38 * sc;
+  }
+  return g;
+}
+
+// ═══════════════════════════════════════════════════
+//  IDLE DANGER MECHANIC: SWOOPING MAGMA RAPTOR
+// ═══════════════════════════════════════════════════
+function makeMagmaRaptor(){
+  const g = new THREE.Group();
+  // Body
+  const b = box(0.7, 0.45, 1.1, MAT.raptorB);
+  b.position.y = 0.3; g.add(b);
+  // Head & Beak
+  const hd = box(0.4, 0.35, 0.45, MAT.raptorB);
+  hd.position.set(0, 0.45, 0.7); g.add(hd);
+  const bk = box(0.2, 0.18, 0.35, lm(0xFF6600, 0xFF3300, 1.5));
+  bk.position.set(0, 0.38, 0.95); g.add(bk);
+  // Glowing Eyes
+  for(const x of [-0.18, 0.18]){
+    const ey = box(0.08, 0.08, 0.08, MAT.raptorEye);
+    ey.position.set(x, 0.52, 0.75); g.add(ey);
+  }
+  // Giant Fiery Wings
+  g.userData.wings = [];
+  for(const side of [-1, 1]){
+    const wg = new THREE.Group();
+    const wMesh = box(1.2, 0.08, 0.7, MAT.raptorW);
+    wMesh.position.set(side * 0.65, 0, 0);
+    wg.add(wMesh);
+    wg.position.set(side * 0.35, 0.38, 0);
+    g.add(wg);
+    g.userData.wings.push(wg);
+  }
+  // Claws / Talons
+  for(const x of [-0.2, 0.2]){
+    const tl = box(0.12, 0.25, 0.12, lm(0x111111));
+    tl.position.set(x, 0.05, 0.1); g.add(tl);
+  }
+  return g;
+}
+
+// ═══════════════════════════════════════════════════
+//  PROCEDURAL TILES
+// ═══════════════════════════════════════════════════
+let tiles = [];
+let lavaMeshes = [];
+let lavaBubbles = [];
+let lavaTime = 0;
+let lastGenZ = 0;
+
+const MAX_X = Math.floor(TW / 2);
+function tileX(col){ return col * TS; }
+
+function addGrassTile(z, deco=true){
+  const g = new THREE.Group();
+  const base = box(TW, 0.16, TS, MAT.grass);
+  base.position.y = -0.08;
+  base.receiveShadow = true;
+  g.add(base);
+
+  if(deco){
+    const cnt = rng.int(0, 3);
+    for(let i=0; i<cnt; i++){
+      const rx = rng.next() * (TW - 1.5) - (TW - 1.5) / 2;
+      const r = dodec(rng.next() * 0.09 + 0.05, 0, MAT.rock);
+      r.position.set(rx, 0.04, (rng.next() - 0.5) * 0.35);
+      r.rotation.set(rng.next() * Math.PI, rng.next() * Math.PI, rng.next() * Math.PI);
+      g.add(r);
+    }
+  }
+  g.position.set(0, 0, z);
+  worldG.add(g);
+  return {z, type: 'grass', group: g, vehicles: [], platforms: [], coin: null};
+}
+
+function addRoadTile(z, speed, vcount){
+  const g = new THREE.Group();
+  const rd = box(TW + 0.5, 0.12, TS, MAT.road);
+  rd.position.y = -0.06;
+  rd.receiveShadow = true;
+  g.add(rd);
+
+  // Road markings
+  for(let i = -4; i <= 4; i++){
+    const lm2 = box(0.08, 0.012, 0.45, MAT.roadMark);
+    lm2.position.set(i, 0.07, 0);
+    g.add(lm2);
+  }
+  // Curbs
+  for(const x of [-(TW/2 - 0.15), TW/2 - 0.15]){
+    const sl = box(0.1, 0.015, TS + 0.02, lm(0xFFFFFF));
+    sl.position.set(x, 0.07, 0);
+    g.add(sl);  }
+  g.position.set(0, 0, z);
+  worldG.add(g);
+
+  // Direction: 1 = moving in +X direction, -1 = moving in -X direction
+  const dir = rng.bool() ? 1 : -1;
+  const vehicles = [];
+  const spacing = (TW + 4) / Math.max(1, vcount);
+
+  for(let i=0; i<vcount; i++){
+    const isTruck = rng.bool(0.24);
+    const vm = isTruck ? makeTruck(rng.int(0, truckColors.length - 1)) : makeCar(rng.int(0, carColors.length - 1));
+
+    // Vehicle length along Z is 0.96 (car) or 1.15 (truck).
+    // When moving along X, rotating by ±90 deg points headlights in direction of motion!
+    // dir > 0 (+X motion) -> rotation.y = -Math.PI / 2
+    // dir < 0 (-X motion) -> rotation.y = Math.PI / 2
+    vm.rotation.y = dir > 0 ? -Math.PI / 2 : Math.PI / 2;
+
+    const sx = -dir * ((TW / 2 + 2) - spacing * (i + rng.next() * 0.4));
+    vm.position.set(sx, 0, z);
+    vehicleG.add(vm);
+
+    vehicles.push({
+      mesh: vm,
+      dir,
+      speed,
+      half: isTruck ? 0.95 : 0.52,
+      type: isTruck ? 'truck' : 'car',
+      missed: false,
+    });
+  }
+  return {z, type: 'road', group: g, vehicles, platforms: [], coin: null};
+}
+
+function addRailTile(z, speed){
+  const g = new THREE.Group();
+  const bl = box(TW + 0.5, 0.12, TS, MAT.railBed);
+  bl.position.y = -0.06;
+  bl.receiveShadow = true;
+  g.add(bl);
+
+  // Wooden sleepers
+  for(let x = -4.2; x <= 4.2; x += 0.65){
+    const sl = box(0.12, 0.07, 0.9, MAT.sleeper);
+    sl.position.set(x, 0.035, 0);
+    g.add(sl);
+  }
+  // Steel rails
+  for(const z2 of [-0.22, 0.22]){
+    const rl = box(TW + 0.5, 0.06, 0.04, MAT.rail);
+    rl.position.set(0, 0.08, z2);
+    g.add(rl);
+  }
+
+  // Crossing signal posts with animated red lights
+  const signalLamps = [];
+  for(const x of [-(TW/2 - 0.35), TW/2 - 0.35]){
+    const post = box(0.08, 0.8, 0.08, MAT.rail);
+    post.position.set(x, 0.4, 0); g.add(post);
+
+    const sgn = box(0.3, 0.3, 0.04, MAT.sign);
+    sgn.position.set(x, 0.82, 0); sgn.rotation.y = Math.PI / 4; g.add(sgn);
+
+    // Two warning lamps
+    for(const lx of [-0.14, 0.14]){
+      const lamp = box(0.09, 0.09, 0.06, MAT.lightOff.clone());
+      lamp.position.set(x + lx, 0.95, 0);
+      g.add(lamp);
+      signalLamps.push(lamp);
+    }
+  }
+
+  g.position.set(0, 0, z);
+  worldG.add(g);
+
+  const dir = rng.bool() ? 1 : -1;
+  const tm = makeTrain();
+  // Rotate train so engine is in front of motion
+  tm.rotation.y = dir > 0 ? -Math.PI / 2 : Math.PI / 2;
+  const sx = -dir * (TW / 2 + 5);
+  tm.position.set(sx, 0, z);
+  vehicleG.add(tm);
+
+  return {
+    z,
+    type: 'rail',
+    group: g,
+    vehicles: [{mesh: tm, dir, speed, half: 2.1, type: 'train', missed: false}],
+    platforms: [],
+    coin: null,
+    signalLamps,
+    warning: false,
+  };
+}
+
+function addLavaTile(z, opts={}){
+  const {platCount=3, moveAmp=0.8, moveSpd=0.35, small=false} = opts;
+  const g = new THREE.Group();
+
+  // Lava liquid base
+  const lb = box(TW + 0.5, 0.08, TS, MAT.lava);
+  lb.position.y = -0.04;
+  lb.receiveShadow = true;
+  g.add(lb);
+
+  // Bright molten cracks
+  const cc = rng.int(2, 5);
+  for(let c=0; c<cc; c++){
+    const cx = (rng.next() - 0.5) * (TW - 0.6);
+    const cw = rng.next() * 0.7 + 0.15;
+    const crk = box(cw, 0.015, rng.next() * 0.28 + 0.1, MAT.lavaHot);
+    crk.position.set(cx, 0.04, (rng.next() - 0.5) * 0.38);
+    g.add(crk);
+  }
+
+  // Side volcanic basalt rocks
+  if(rng.bool(0.5)){
+    const er = dodec(rng.next() * 0.15 + 0.08, 0, MAT.basalt);
+    er.position.set((rng.bool() ? -1 : 1) * (TW/2 - 0.15), 0.08, (rng.next() - 0.5) * 0.38);
+    er.rotation.set(rng.next() * Math.PI, rng.next() * Math.PI, rng.next() * Math.PI);
+    g.add(er);
+  }
+
+  // Pulsating glow plane
+  const gl = box(TW, 0.01, TS, MAT.glow.clone());
+  gl.position.y = 0.042;
+  g.add(gl);
+  lavaMeshes.push(gl);
+
+  g.position.set(0, 0, z);
+  lavaG.add(g);
+
+  // Safe floating platforms
+  const platforms = [];
+  const pTypes = ['rock', 'rock', 'basalt', 'log'];
+  const usedX = [];
+
+  for(let p=0; p<platCount; p++){
+    let px, tries = 0;
+    do {
+      px = (rng.next() * (TW - 1.8)) - (TW - 1.8) / 2;
+      tries++;
+    } while(usedX.some(u => Math.abs(u - px) < 0.75) && tries < 25);
+    usedX.push(px);
+
+    const pType = rng.pick(pTypes);
+    const pg = makePlatform(pType, small);
+    pg.position.set(px, 0, z);
+
+    const offset = rng.next() * Math.PI * 2;
+    const amp = moveAmp * (0.65 + rng.next() * 0.7);
+    const spd = moveSpd * (0.7 + rng.next() * 0.6);
+
+    vehicleG.add(pg);
+    platforms.push({
+      group: pg,
+      px,
+      amp,
+      spd,
+      offset,
+      prevX: px,
+      deltaX: 0,
+      halfW: pg.userData.halfW || 0.4,
+    });
+  }
+  return {z, type: 'lava', group: g, vehicles: [], platforms, coin: null};
+}
+
+function addCoin(tile){
+  if(tile.coin) return;
+  let cx;
+  if(tile.platforms && tile.platforms.length > 0){
+    const p = rng.pick(tile.platforms);
+    cx = p.px;
+  } else {
+    cx = tileX(rng.int(-MAX_X + 1, MAX_X - 1));
+  }
+  const c = makeCoin();
+  c.position.set(cx, 0.38, tile.z);
+  c.userData.cx = cx;
+  vehicleG.add(c);
+  tile.coin = c;
+}
+
+// ═══════════════════════════════════════════════════
+//  DIFFICULTY & PROCEDURAL GENERATION
+// ═══════════════════════════════════════════════════
+function difficulty(z){ return Math.min(1.0, z / 110); }
+
+function genRows(fromZ, n){
+  let z = fromZ;
+  const diff = difficulty(z);
+
+  for(let i=0; i<n; ){
+    let type;
+    if(z < 5) {
+      type = 'grass';
+    } else {
+      const r = rng.next();
+      if(r < 0.32 + diff * 0.08) type = 'lava';
+      else if(r < 0.62 + diff * 0.06) type = 'road';
+      else if(r < 0.76 + diff * 0.06) type = 'rail';
+      else type = 'grass';
+    }
+    const coinChance = 0.36;
+
+    if(type === 'grass'){
+      const t = addGrassTile(z, z > 1);
+      if(rng.bool(coinChance) && z > 2) addCoin(t);
+      tiles.push(t); z++; i++;
+    }
+    else if(type === 'road'){
+      const lanes = rng.int(1, Math.max(1, Math.ceil(1 + diff * 2.5)));
+      for(let l=0; l<lanes; l++){
+        const spd = 0.035 + diff * 0.08 + rng.next() * 0.03;
+        const vc = Math.max(1, Math.round(1.5 + diff * 2.5 * rng.next()));
+        const t = addRoadTile(z, spd, vc);
+        if(rng.bool(coinChance)) addCoin(t);
+        tiles.push(t); z++; i++;
+      }
+      if(lanes > 1){
+        const med = addGrassTile(z, false);
+        tiles.push(med); z++; i++;
+      }
+    }
+    else if(type === 'rail'){
+      const spd = 0.07 + diff * 0.12;
+      const t = addRailTile(z, spd);
+      if(rng.bool(coinChance * 0.5)) addCoin(t);
+      tiles.push(t); z++; i++;
+      const med = addGrassTile(z, false);
+      tiles.push(med); z++; i++;
+    }
+    else if(type === 'lava'){
+      const width = rng.int(2, Math.max(2, Math.round(2 + diff * 4)));
+      const pc = Math.max(2, Math.round(4.2 - diff * 2.2));
+      const opts = {
+        platCount: pc,
+        moveAmp: 0.4 + diff * 0.9,
+        moveSpd: 0.25 + diff * 0.55,
+        small: diff > 0.65,
+      };
+      for(let lz=0; lz<width; lz++){
+        const t = addLavaTile(z, opts);
+        if(lz === Math.floor(width / 2) && rng.bool(coinChance * 0.6)) addCoin(t);
+        tiles.push(t); z++; i++;
+      }
+      const safeLanding = addGrassTile(z, false);
+      tiles.push(safeLanding); z++; i++;    }
+  }
+  lastGenZ = z;
+}
+
+// ═══════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════
+let state = 'menu'; // menu | play | dead
+let mode = 'normal';
+let pz = 0, px = 0; // tile coordinates: forward is +Z, right is +X
+let score = 0, coins_ = 0, combo = 1;
+let pb = parseInt(localStorage.getItem('lvhop_pb') || '0');
+let isNewPB = false;
+let lastMove = 0;
+let lastForwardHopTime = 0;
+let dangerLv = 0;
+let slomo = false, slomoT = 0;
+let deathAnim = null;
+let hopAnim = null; // {fx, fz, tx, tz, prog, dx, dz}
+let pengFace = 0;   // 0 = facing +Z forward
+let pengMesh = null;
+let shakeT = 0, shakeI = 0;
+let comboTimer = null;
+let camTargetZ = 0, camTargetX = 0;
+let currentPlatform = null;
+bufferedMove = null;
+try{ if(document.activeElement&&document.activeElement.blur) document.activeElement.blur(); window.focus(); }catch(e){}
+let bufferedMove = null; // Platform player is standing on
+
+// Predator Raptor state
+let raptorMesh = null;
+let raptorAnim = null;
+let shadowMesh = null;
+
+// ─── CLEAR WORLD ───────────────────────────────────
+function clearWorld(){
+  while(worldG.children.length) worldG.remove(worldG.children[0]);
+  while(lavaG.children.length) lavaG.remove(lavaG.children[0]);
+  while(vehicleG.children.length) vehicleG.remove(vehicleG.children[0]);
+  if(raptorMesh){ scene.remove(raptorMesh); raptorMesh = null; }
+  if(shadowMesh){ scene.remove(shadowMesh); shadowMesh = null; }
+  tiles = [];
+  lavaMeshes = [];
+  lavaBubbles = [];
+  lastGenZ = 0;
+  particles = [];
+  currentPlatform = null;
+  raptorAnim = null;
+}
+
+// ─── START GAME ────────────────────────────────────
+function startGame(m){
+  initAudio();
+  if(activeDeathSource){ try{ activeDeathSource.stop(); }catch(e){} activeDeathSource = null; }
+  if(customDeathAudio){ try{ customDeathAudio.pause(); customDeathAudio.currentTime = 0; }catch(e){} }
+  mode = m || 'normal';
+  state = 'play';
+  const seed = mode === 'daily' ? dailySeed() : (Math.random() * 0xFFFFFF | 0);
+  rng = new RNG(seed);
+  clearWorld();
+
+  pz = 0; px = 0; score = 0; coins_ = 0; combo = 1; isNewPB = false;
+  lastMove = clock.getElapsedTime();
+  lastForwardHopTime = lastMove;
+  slomo = false; dangerLv = 0; deathAnim = null; hopAnim = null;
+  shakeT = 0; camTargetZ = -2; camTargetX = 0;
+  currentPlatform = null;
+
+  genRows(0, 36);
+
+  if(pengMesh) scene.remove(pengMesh);
+  pengMesh = makePenguin();
+  pengMesh.position.set(0, 0, 0);
+  scene.add(pengMesh);
+
+  // Ground shadow for predator
+  shadowMesh = new THREE.Mesh(new THREE.CircleGeometry(0.8, 16), MAT.shadow);
+  shadowMesh.rotation.x = -Math.PI / 2;
+  shadowMesh.position.set(0, 0.02, 0);
+  shadowMesh.visible = false;
+  scene.add(shadowMesh);
+
+  cam.position.set(0, 8.5, -5.5);
+
+  document.getElementById('menu').classList.add('hidden');
+  document.getElementById('gover').classList.remove('vis');
+  document.getElementById('touch').classList.add('vis');
+  document.getElementById('danger-bar').style.opacity = '1';
+  document.getElementById('danger-warn').style.opacity = '0';
+  document.getElementById('h-pb').style.display = 'none';
+
+  const mp = document.getElementById('mode-pill');
+  if(mode === 'daily'){
+    mp.style.display = 'block';
+    mp.textContent = '🌋 DAILY CHALLENGE';
+  } else {
+    mp.style.display = 'none';
+  }
+
+  updateHUD();
+  startMusic();
+}
+
+// ─── MOVEMENT LOGIC ────────────────────────────────
+function tryMove(dx, dz){
+  if(state !== 'play' || deathAnim) return;
+
+  if(hopAnim){
+    // Buffer input so rapid keypresses/swipes are never dropped
+    bufferedMove = [dx, dz];
+    return;
+  }
+
+  const nz = pz + dz;
+  const nx = px + dx;
+
+  // Screen horizontal boundaries
+  if(Math.abs(nx) > MAX_X) return;
+  // Cannot hop backward behind starting point
+  if(nz < 0) return;
+
+  // Character facing rotation
+  if(dz > 0) pengFace = 0;              // Forward (+Z)
+  else if(dz < 0) pengFace = Math.PI;   // Backward (-Z)
+  else if(dx > 0) pengFace = -Math.PI/2;// Right (+X)
+  else pengFace = Math.PI/2;            // Left (-X)
+
+  // Starting world X: use actual current world X if hopping from a moving platform!
+  const startWX = currentPlatform ? pengMesh.position.x : tileX(px);
+  const targetWX = tileX(nx);
+
+  currentPlatform = null; // Detach from platform during hop
+
+  hopAnim = {
+    fx: startWX,
+    fz: pz,
+    tx: targetWX,
+    tz: nz,
+    prog: 0,
+    dx,
+    dz,
+  };
+
+  pz = nz;
+  px = nx;
+
+  const now = clock.getElapsedTime();
+  lastMove = now;
+  dangerLv = 0;
+  document.getElementById('danger-warn').style.opacity = '0';
+
+  // Forward progress & combo multiplier
+  if(dz > 0){
+    if(nz > score){
+      const timeSinceLastForward = now - lastForwardHopTime;
+      lastForwardHopTime = now;
+
+      if(timeSinceLastForward < 1.35){
+        combo = Math.min(combo + 1, 20);
+      } else {
+        combo = Math.max(1, combo - 1);
+      }
+
+      score = nz;
+      if(score > pb){
+        pb = score;
+        isNewPB = true;
+        localStorage.setItem('lvhop_pb', pb);
+      }
+
+      showCombo();
+      updateHUD();
+
+      const points = 10 * combo;
+      popup(`+${points}`, null, combo >= 10 ? '#FF3300' : combo >= 5 ? '#FFD700' : '#FFFFFF', 24 + combo * 1.8);
+    }
+  }
+
+  // Check if landing onto a lava zone directly for "risky" bonus
+  const nextTile = tiles.find(t => Math.round(t.z) === Math.round(nz));
+  if(nextTile && nextTile.type === 'lava'){
+    snd('risky');
+  }
+
+  // Infinite procedural generation ahead
+  if(nz + 28 > lastGenZ) genRows(lastGenZ, 22);
+
+  // Prune tiles behind player
+  if(tiles.length > 95){
+    const rem = tiles.splice(0, 24);
+    rem.forEach(t => {
+      worldG.remove(t.group);
+      lavaG.remove(t.group);
+      t.vehicles.forEach(v => vehicleG.remove(v.mesh));
+      t.platforms.forEach(p => vehicleG.remove(p.group));
+      if(t.coin) vehicleG.remove(t.coin);
+    });
+  }
+  snd('hop');
+}
+
+// ─── DEATH HANDLING ────────────────────────────────
+function die(cause){
+  if(state !== 'play' || deathAnim) return;
+  state = 'dead';
+  playCustomDeathSound();
+
+  let causeText = 'RUN OVER';
+  if(cause === 'vehicle') causeText = 'SQUASHED BY TRAFFIC!';
+  else if(cause === 'train') causeText = 'OBLITERATED BY TRAIN!';
+  else if(cause === 'lava') causeText = 'MELTED IN MOLTEN LAVA!';
+  else if(cause === 'raptor') causeText = 'SNATCHED BY MAGMA PREDATOR!';
+  else if(cause === 'trail') causeText = 'LEFT IN THE ASHES!';
+  else if(cause === 'fall') causeText = 'SWEPT OFF THE EDGE!';
+
+  document.getElementById('go-cause').textContent = causeText;
+
+  shakeT = 0.55;
+  shakeI = cause === 'train' ? 0.6 : 0.38;
+
+  if(cause === 'lava'){
+    snd('death_lava');
+    // Sink and sizzle animation
+    deathAnim = {
+      t: 0,
+      dur: 1.8,
+      cause,
+      vy: -0.015,
+      gravity: -0.002,
+      flyX: 0,
+      flyZ: 0,
+      spX: 0.05,
+      spZ: 0.05,
+    };
+    for(let i=0; i<16; i++) spawnP(pengMesh.position.clone(), true);
+  } else if(cause === 'raptor'){
+    snd('raptor_screech');
+    // Raptor snatches penguin into sky
+    deathAnim = {
+      t: 0,
+      dur: 2.0,
+      cause,
+      vy: 0.14,
+      gravity: 0.002,
+      flyX: 0.03,
+      flyZ: 0.12,
+      spX: 0.1,
+      spZ: 0.1,
+    };  } else {
+    // Comedic ragdoll flying launch
+    snd('death_hit');
+    deathAnim = {
+      t: 0,
+      dur: 2.0,
+      cause,
+      vy: cause === 'train' ? 0.22 : 0.15,
+      gravity: -0.006,
+      flyX: (Math.random() - 0.5) * 0.18,
+      flyZ: cause === 'train' ? 0.18 : (Math.random() - 0.5) * 0.12,
+      spX: (Math.random() - 0.5) * 0.45,
+      spZ: (Math.random() - 0.5) * 0.45,
+    };
+    for(let i=0; i<8; i++) spawnP(pengMesh.position.clone(), false);
+  }
+
+  // Save daily best
+  if(mode === 'daily'){
+    const k = dailyKey();
+    const old = parseInt(localStorage.getItem(k) || '0');
+    if(score > old) localStorage.setItem(k, score);
+  }
+
+  setTimeout(showGameOver, 1750);
+}
+
+function showGameOver(){
+  document.getElementById('go-sc').textContent = score;
+  document.getElementById('go-co').textContent = coins_;
+  document.getElementById('go-pb').style.display = isNewPB ? 'block' : 'none';
+
+  if(mode === 'daily'){
+    const k = dailyKey();
+    const db = localStorage.getItem(k) || 0;
+    document.getElementById('go-dl').style.display = 'block';
+    document.getElementById('go-db').textContent = db;
+  } else {
+    document.getElementById('go-dl').style.display = 'none';
+  }
+  document.getElementById('gover').classList.add('vis');
+}
+
+// ─── PARTICLES ─────────────────────────────────────
+let particles = [];
+function spawnP(pos, hot){
+  const m = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08 + Math.random() * 0.09, 0.08 + Math.random() * 0.09, 0.08 + Math.random() * 0.09),
+    hot ? MAT.lavaDust : MAT.dust
+  );
+  m.position.copy(pos);
+  m.position.y += 0.12;
+  const v = {
+    x: (Math.random() - 0.5) * 0.1,
+    y: Math.random() * 0.12 + 0.04,
+    z: (Math.random() - 0.5) * 0.1,
+  };
+  scene.add(m);
+  particles.push({mesh: m, v, life: 1, ml: 1});
+}
+
+// ─── COLLISION & INTERACTION CHECK ─────────────────
+function checkColl(){
+  if(!pengMesh || hopAnim || state !== 'play') return;
+
+  const wx = pengMesh.position.x;
+  const wz = pengMesh.position.z;
+  const tile = tiles.find(t => Math.round(t.z) === Math.round(wz));
+  if(!tile) return;
+
+  // LAVA HAZARD CHECK
+  if(tile.type === 'lava'){
+    let landedOn = null;
+    tile.platforms.forEach(p => {
+      const pwx = p.group.position.x;
+      if(Math.abs(wx - pwx) < p.halfW + 0.18){
+        landedOn = p;
+      }
+    });
+
+    if(landedOn){
+      currentPlatform = landedOn;
+    } else {
+      currentPlatform = null;
+      die('lava');
+      return;
+    }
+  } else {
+    currentPlatform = null;
+  }
+
+  // VEHICLE HAZARD & NEAR MISS CHECK
+  tile.vehicles.forEach(v => {
+    if(!v.mesh) return;
+    const vx = v.mesh.position.x;
+    const dist = Math.abs(wx - vx);
+
+    if(dist < v.half + 0.22){
+      // Direct collision
+      die(v.type === 'train' ? 'train' : 'vehicle');
+    } else if(dist < v.half + 0.55 && !v.missed){
+      // Near miss triggered once per vehicle pass
+      v.missed = true;
+      triggerNearMiss();
+    }
+  });
+
+  // COIN PICKUP CHECK
+  if(tile.coin){
+    const cx = tile.coin.userData.cx;
+    if(Math.abs(wx - cx) < 0.45){
+      vehicleG.remove(tile.coin);
+      tile.coin = null;
+      coins_++;
+      updateHUD();
+      snd('coin');
+      combo = Math.min(combo + 1, 20);
+      popup('🪙 +COIN', null, '#FFD700', 26);
+      showCombo();
+    }
+  }
+}
+
+function triggerNearMiss(){
+  if(slomo) return;
+  slomo = true;
+  slomoT = 0.5;
+  snd('miss');
+  popup('NEAR MISS! +250', null, '#FF5500', 32);
+  combo = Math.min(combo + 2, 20);
+  score += 25; // Bonus points
+  showCombo();
+  updateHUD();
+
+  document.getElementById('nm-flash').style.opacity = '1';
+  document.getElementById('slomo').style.opacity = '1';
+  setTimeout(() => {
+    document.getElementById('nm-flash').style.opacity = '0';
+    document.getElementById('slomo').style.opacity = '0';
+  }, 280);
+}
+
+// ─── HUD & POPUPS ──────────────────────────────────
+function updateHUD(){
+  document.getElementById('h-score').textContent = score;
+  document.getElementById('h-combo').textContent = 'x' + combo;
+  document.getElementById('h-coins').textContent = coins_;
+  document.getElementById('h-best').textContent = pb;
+  if(isNewPB) document.getElementById('h-pb').style.display = 'block';
+}
+
+function showCombo(){
+  if(combo < 2) return;
+  const el = document.getElementById('combo-disp');
+  document.getElementById('ct').textContent = 'COMBO x' + combo;
+  document.getElementById('cs').textContent =
+    combo >= 15 ? 'GODLIKE! ⚡⚡' :
+    combo >= 10 ? 'INSANE! 🔥🔥' :
+    combo >= 6  ? 'ON FIRE! 🔥' :
+    combo >= 3  ? 'AWESOME!' : 'NICE!';
+  el.style.opacity = '1';
+  el.style.transform = 'translate(-50%, -50%) scale(1.15)';
+  setTimeout(() => { el.style.transform = 'translate(-50%, -50%) scale(1)'; }, 120);
+
+  clearTimeout(comboTimer);
+  comboTimer = setTimeout(() => { el.style.opacity = '0'; }, 850);
+}
+
+function popup(txt, el, color, size){
+  const layer = document.getElementById('pops');
+  const d = document.createElement('div');
+  d.className = 'pop';
+  d.textContent = txt;
+  const cx = innerWidth * 0.5 + (Math.random() - 0.5) * 160;
+  const cy = innerHeight * 0.38 + (Math.random() - 0.5) * 80;
+  d.style.cssText = `color:${color || '#fff'};font-size:${size || 22}px;left:${cx}px;top:${cy}px;text-shadow:0 0 14px ${color || '#fff'},0 2px 0 rgba(0,0,0,.8);-webkit-text-stroke:1px rgba(0,0,0,.6)`;
+  layer.appendChild(d);
+  setTimeout(() => d.remove(), 950);
+}
+
+// ═══════════════════════════════════════════════════
+//  UPDATE LOOP
+// ═══════════════════════════════════════════════════
+function update(dt){
+  if(state === 'menu') return;
+
+  lavaTime += dt * 0.8;
+  const ts = slomo ? 0.28 : 1.0;
+  const tdt = dt * ts;
+
+  if(slomo){
+    slomoT -= dt;
+    if(slomoT <= 0) slomo = false;
+  }
+
+  // Lava surface pulse
+  lavaMeshes.forEach((m, i) => {
+    const p = 0.55 + Math.sin(lavaTime * 2.2 + i * 0.55) * 0.25;
+    m.material.opacity = p;
+    m.material.emissiveIntensity = p * 1.6;
+  });
+
+  // Lava platforms movement
+  tiles.forEach(t => {
+    t.platforms.forEach(p => {
+      const ox = p.px + Math.sin(lavaTime * p.spd + p.offset) * p.amp;
+      const clampedX = Math.max(-TW/2 + 0.35, Math.min(TW/2 - 0.35, ox));
+      p.deltaX = clampedX - p.prevX;
+      p.prevX = clampedX;
+      p.group.position.x = clampedX;
+      p.group.position.y = Math.sin(lavaTime * p.spd * 0.6 + p.offset) * 0.045;
+    });
+  });
+
+  // If standing on a moving platform, carry the penguin!
+  if(currentPlatform && !hopAnim && state === 'play'){
+    pengMesh.position.x += currentPlatform.deltaX;
+    // Check if swept off the side of the world into lava
+    if(Math.abs(pengMesh.position.x) > TW / 2){
+      currentPlatform = null;
+      die('fall');
+    }
+  }
+
+  // Vehicle motion & Railway signal logic
+  const vSpdMul = slomo ? 0.25 : 1.0;
+  tiles.forEach(t => {
+    t.vehicles.forEach(v => {
+      v.mesh.position.x += v.dir * v.speed * vSpdMul * 60 * dt;
+      const limit = TW / 2 + (v.type === 'train' ? 5 : 2.5);
+      if(v.dir > 0 && v.mesh.position.x > limit){
+        v.mesh.position.x = -limit;
+        v.missed = false;
+      } else if(v.dir < 0 && v.mesh.position.x < -limit){
+        v.mesh.position.x = limit;
+        v.missed = false;
+      }
+    });
+
+    // Railway warning signals
+    if(t.type === 'rail' && t.signalLamps){
+      const tr = t.vehicles[0];
+      if(tr){
+        const distToTrack = Math.abs(tr.mesh.position.x);
+        const isApproaching = distToTrack < TW / 2 + 3.8;
+        if(isApproaching){
+          if(!t.warning){
+            t.warning = true;
+            snd('train_warn');
+          }          // Alternate flashing red lights
+          const flash = Math.sin(lavaTime * 12) > 0;
+          t.signalLamps[0].material = flash ? MAT.lightRed : MAT.lightOff;
+          t.signalLamps[1].material = !flash ? MAT.lightRed : MAT.lightOff;
+          t.signalLamps[2].material = flash ? MAT.lightRed : MAT.lightOff;
+          t.signalLamps[3].material = !flash ? MAT.lightRed : MAT.lightOff;
+
+          if(distToTrack < 1.2 && !tr.soundPassed){
+            tr.soundPassed = true;
+            snd('train_pass');
+            shakeT = 0.35;
+            shakeI = 0.4;
+          }
+        } else {
+          t.warning = false;
+          tr.soundPassed = false;
+          t.signalLamps.forEach(l => l.material = MAT.lightOff);
+        }
+      }
+    }
+  });
+
+  // Coin rotation & floating
+  tiles.forEach(t => {
+    if(t.coin){
+      t.coin.rotation.z += tdt * 2.8;
+      t.coin.position.y = 0.38 + Math.sin(lavaTime * 2.5) * 0.07;
+    }
+  });
+
+  // HOP ANIMATION
+  if(hopAnim && state !== 'dead'){
+    hopAnim.prog = Math.min(1, hopAnim.prog + dt * HOP_SPEED);
+    const t = hopAnim.prog;
+    // Ease out quad
+    const e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+    const wx = hopAnim.fx + (hopAnim.tx - hopAnim.fx) * e;
+    const wz = hopAnim.fz + (hopAnim.tz - hopAnim.fz) * e;
+    const arc = Math.sin(t * Math.PI) * 0.52;
+
+    pengMesh.position.set(wx, arc, wz);
+
+    // Squash & Stretch
+    const stretch = 1 + arc * 0.6;
+    const squash = 1 / stretch;
+    pengMesh.scale.set(squash, stretch, squash);
+
+    // Dynamic tilt in direction of hop
+    const tilt = (t < 0.5 ? t : 1 - t) * 0.35;
+    pengMesh.rotation.x = tilt * hopAnim.dz;
+    pengMesh.rotation.z = -tilt * hopAnim.dx;
+
+    // Flipper flapping during hop
+    if(pengMesh.userData.flippers){
+      pengMesh.userData.flippers[0].rotation.z = 0.25 + arc * 0.8;
+      pengMesh.userData.flippers[1].rotation.z = -0.25 - arc * 0.8;
+    }
+
+    if(t >= 1){
+      hopAnim = null;
+      // Landing soft squash
+      pengMesh.scale.set(1.25, 0.72, 1.25);
+      setTimeout(() => { if(pengMesh) pengMesh.scale.set(1, 1, 1); }, 110);
+      pengMesh.position.set(targetWXClamped(wx), 0, pz);
+      snd('land');
+      for(let i=0; i<4; i++) spawnP(pengMesh.position.clone(), false);
+      checkColl();
+      if(bufferedMove && state === 'play' && !deathAnim){
+        const [bdx, bdz] = bufferedMove;
+        bufferedMove = null;
+        tryMove(bdx, bdz);
+      } else {
+        bufferedMove = null;
+      }
+    }
+  } else if(pengMesh && !deathAnim && state === 'play'){
+    // Continuous collision check while standing still
+    checkColl();
+
+    // Idle breathing & turning
+    pengMesh.rotation.y = THREE.MathUtils.lerp(pengMesh.rotation.y, pengFace, dt * 12);
+    pengMesh.position.y = Math.sin(clock.getElapsedTime() * 2.2) * 0.035;
+    const is = 1 + Math.sin(clock.getElapsedTime() * 1.6) * 0.025;
+    pengMesh.scale.set(is, 1, is);
+  }
+
+  // Helper to keep x within bounds
+  function targetWXClamped(x){
+    return Math.max(-MAX_X, Math.min(MAX_X, Math.round(x)));
+  }
+
+  // DEATH ANIMATION
+  if(deathAnim && pengMesh){
+    deathAnim.t += dt;
+    const da = deathAnim;
+
+    if(da.cause === 'raptor'){
+      // Being carried up by predator
+      pengMesh.position.y += da.vy;
+      pengMesh.position.z += da.flyZ;
+      pengMesh.rotation.x += da.spX;
+      pengMesh.rotation.z += da.spZ;
+    } else if(da.cause === 'lava'){
+      // Sinking into lava
+      pengMesh.position.y += da.vy;
+      pengMesh.scale.multiplyScalar(0.98);
+      pengMesh.rotation.x += 0.04;
+      pengMesh.rotation.z += 0.04;
+    } else {
+      // Ragdoll spin launch
+      da.vy += da.gravity * 60 * dt;
+      pengMesh.position.x += da.flyX * 60 * dt;
+      pengMesh.position.y += da.vy;
+      pengMesh.position.z += da.flyZ * 60 * dt;
+      pengMesh.rotation.x += da.spX;
+      pengMesh.rotation.z += da.spZ;
+      pengMesh.rotation.y += 0.2;
+    }
+  }
+
+  // PARTICLES UPDATE
+  particles = particles.filter(p => {
+    p.life -= tdt * 1.6;
+    if(p.life <= 0){ scene.remove(p.mesh); return false; }
+    p.v.y -= 0.005;
+    p.mesh.position.x += p.v.x;
+    p.mesh.position.y += p.v.y;
+    p.mesh.position.z += p.v.z;
+    p.mesh.scale.setScalar(p.life);
+    return true;
+  });
+
+  // IDLE DANGER MECHANIC: SWOOPING MAGMA RAPTOR
+  if(state === 'play' && !deathAnim){
+    const idle = clock.getElapsedTime() - lastMove;
+    dangerLv = Math.min(1.0, idle / IDLE_T);
+
+    const db = document.getElementById('danger-bar');
+    db.style.width = (dangerLv * 100) + '%';
+    db.style.background = dangerLv > 0.75 ? '#FF0000' : '#FF6600';
+    db.style.boxShadow = `0 0 ${dangerLv > 0.75 ? 14 : 7}px ${dangerLv > 0.75 ? '#FF0000' : '#FF6600'}`;
+
+    // Danger shadow & warning UI
+    if(dangerLv > 0.55){
+      document.getElementById('danger-warn').style.opacity = (Math.sin(lavaTime * 10) > 0) ? '1' : '0.4';
+      if(shadowMesh){
+        shadowMesh.visible = true;
+        shadowMesh.position.set(pengMesh.position.x, 0.02, pengMesh.position.z);
+        const shadowScale = (dangerLv - 0.55) / 0.45 * 1.4;
+        shadowMesh.scale.set(shadowScale, shadowScale, shadowScale);
+      }
+    } else {
+      document.getElementById('danger-warn').style.opacity = '0';
+      if(shadowMesh) shadowMesh.visible = false;
+    }
+
+    // Trigger predator swoop
+    if(dangerLv >= 1.0){
+      if(!raptorAnim){
+        if(!raptorMesh){
+          raptorMesh = makeMagmaRaptor();
+          scene.add(raptorMesh);
+        }
+        raptorMesh.visible = true;
+        raptorAnim = {
+          t: 0,
+          dur: 1.2,
+          startPos: new THREE.Vector3(pengMesh.position.x, 8.5, pengMesh.position.z - 7),
+          targetPos: new THREE.Vector3(pengMesh.position.x, 0.5, pengMesh.position.z),
+          exitPos: new THREE.Vector3(pengMesh.position.x, 9.0, pengMesh.position.z + 8),
+        };
+        snd('raptor_screech');
+        popup('MAGMA PREDATOR! 🦅', null, '#FF2200', 36);
+      }
+    }
+
+    // Trailing death if player is left too far behind
+    if(score > pz + TRAIL_KILL){
+      popup('LEFT BEHIND IN LAVA! 💀', null, '#FF2200', 32);
+      die('trail');
+    }
+  }
+
+  // Update Magma Raptor swoop animation
+  if(raptorAnim && raptorMesh){
+    raptorAnim.t += dt;
+    const progress = raptorAnim.t / raptorAnim.dur;
+
+    // Wing flap
+    const flap = Math.sin(lavaTime * 24) * 0.45;
+    if(raptorMesh.userData.wings){
+      raptorMesh.userData.wings[0].rotation.z = flap;
+      raptorMesh.userData.wings[1].rotation.z = -flap;
+    }
+
+    if(progress < 0.5){
+      // Swooping down towards player
+      const u = progress / 0.5;
+      raptorMesh.position.lerpVectors(raptorAnim.startPos, raptorAnim.targetPos, u);
+      raptorMesh.lookAt(raptorAnim.targetPos.x, raptorAnim.targetPos.y - 0.2, raptorAnim.targetPos.z + 1);
+    } else {
+      // Snatch penguin and swoop up
+      if(state === 'play') die('raptor');
+      const u = (progress - 0.5) / 0.5;
+      raptorMesh.position.lerpVectors(raptorAnim.targetPos, raptorAnim.exitPos, u);
+      raptorMesh.lookAt(raptorAnim.exitPos.x, raptorAnim.exitPos.y + 0.5, raptorAnim.exitPos.z + 2);
+    }
+    if(progress >= 1.0){
+      raptorMesh.visible = false;
+      raptorAnim = null;
+    }
+  }
+
+  // CAMERA FOLLOW (ISOMETRIC / 3RD PERSON PERSPECTIVE)
+  if(pengMesh){
+    const px2 = pengMesh.position.x * 0.35;
+    const pz2 = pengMesh.position.z;
+    camTargetX += (px2 - camTargetX) * dt * CAM_LERP;
+    camTargetZ += (pz2 - camTargetZ) * dt * CAM_LERP;
+
+    const sk = (shakeT > 0 && state !== 'menu') ? (Math.random() - 0.5) * shakeI : 0;
+    cam.position.x += (camTargetX + sk - cam.position.x) * dt * CAM_LERP;
+    cam.position.y += (8.2 - cam.position.y) * dt * 3.5;
+    cam.position.z += ((camTargetZ - 5.5) + sk * 0.5 - cam.position.z) * dt * CAM_LERP;
+
+    cam.lookAt(camTargetX, pengMesh.position.y * 0.15 + 0.6, camTargetZ + 1.8);
+    if(shakeT > 0) shakeT -= dt;
+
+    // Point light follows player and brightens over lava
+    lavaLight.position.set(pengMesh.position.x, 0.6, pengMesh.position.z);
+    const inLava = tiles.some(t => t.type === 'lava' && Math.abs(t.z - pz) < 1.5);
+    lavaLight.intensity = THREE.MathUtils.lerp(lavaLight.intensity, inLava ? 2.6 : 0.6, dt * 4);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER LOOP
+// ═══════════════════════════════════════════════════
+function loop(){
+  requestAnimationFrame(loop);
+  const dt = Math.min(clock.getDelta(), 0.055);
+  update(dt);
+  renderer.render(scene, cam);
+}
+
+
+// ═══════════════════════════════════════════════════
+//  INPUT HANDLING (DESKTOP, TOUCH, GAMEPAD)
+// ═══════════════════════════════════════════════════
+// Comprehensive Key Mappings
+const keyMap = {
+  // Arrow keys
+  'ArrowUp':    [0, 1],
+  'ArrowDown':  [0, -1],
+  'ArrowLeft':  [-1, 0],
+  'ArrowRight': [1, 0],
+  // WASD (case-insensitive)
+  'w': [0, 1], 'W': [0, 1],
+  's': [0, -1], 'S': [0, -1],
+  'a': [-1, 0], 'A': [-1, 0],
+  'd': [1, 0], 'D': [1, 0],
+  // French AZERTY
+  'z': [0, 1], 'Z': [0, 1],
+  'q': [-1, 0], 'Q': [-1, 0],
+  // Spacebar hops forward
+  ' ': [0, 1],
+  'Spacebar': [0, 1],
+};
+
+const codeMap = {
+  'ArrowUp':    [0, 1],
+  'ArrowDown':  [0, -1],
+  'ArrowLeft':  [-1, 0],
+  'ArrowRight': [1, 0],
+  'KeyW': [0, 1],
+  'KeyS': [0, -1],
+  'KeyA': [-1, 0],
+  'KeyD': [1, 0],
+  'KeyZ': [0, 1],
+  'KeyQ': [-1, 0],
+  'Space': [0, 1],
+};
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'r' || e.key === 'R' || e.code === 'KeyR'){
+    if(state !== 'menu') startGame(mode);
+    return;
+  }
+  if(state !== 'play') return;
+
+  const m = keyMap[e.key] || codeMap[e.code];
+  if(m){
+    e.preventDefault();
+    tryMove(m[0], m[1]);
+  }
+});
+
+// Canvas Tap-to-Hop: Mouse clicks on desktop only
+canvas.addEventListener('pointerdown', e => {
+  if(e.pointerType !== 'mouse') return; // Touch is handled by touch handlers
+  if(state !== 'play') return;
+
+  const rect = canvas.getBoundingClientRect();
+  const xRatio = (e.clientX - rect.left) / rect.width;
+  const yRatio = (e.clientY - rect.top) / rect.height;
+
+  if(yRatio > 0.82) return; // Ignore bottom area
+
+  if(xRatio < 0.25) tryMove(-1, 0);       // Click left
+  else if(xRatio > 0.75) tryMove(1, 0);   // Click right
+  else if(yRatio > 0.65) tryMove(0, -1);  // Click bottom -> hop back
+  else tryMove(0, 1);                     // Click center/top -> hop forward!
+});
+
+// Touch Buttons (D-Pad)
+document.querySelectorAll('.tbtn').forEach(b => {
+  const dm = {up: [0, 1], down: [0, -1], left: [-1, 0], right: [1, 0]};
+  const trigger = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    b.classList.add('act');
+    if(dm[b.dataset.d]) tryMove(...dm[b.dataset.d]);
+  };
+  b.addEventListener('pointerdown', trigger);
+  b.addEventListener('pointerup', e => { e.preventDefault(); e.stopPropagation(); b.classList.remove('act'); });
+  b.addEventListener('pointercancel', () => b.classList.remove('act'));
+});
+
+// Touch Gestures: Swipe & Screen Tap for Mobile
+let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+document.addEventListener('touchstart', e => {
+  if(e.target.closest('#touch') || e.target.closest('#menu') || e.target.closest('#gover')) return;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchStartTime = performance.now();
+}, {passive: true});
+
+document.addEventListener('touchend', e => {
+  if(state !== 'play') return;
+  if(e.target.closest('#touch') || e.target.closest('#menu') || e.target.closest('#gover')) return;
+
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  const dt = performance.now() - touchStartTime;
+  const abX = Math.abs(dx), abY = Math.abs(dy);
+
+  // Short tap anywhere on screen = Hop Forward!
+  if(abX < 18 && abY < 18 && dt < 320){
+    tryMove(0, 1);
+    return;
+  }
+
+  // Swipe gesture
+  if(Math.max(abX, abY) >= 20){
+    if(abX > abY){
+      tryMove(dx > 0 ? 1 : -1, 0); // Swipe left / right
+    } else {
+      // Swipe up (dy < 0) -> Forward (+Z)
+      // Swipe down (dy > 0) -> Backward (-Z)
+      tryMove(0, dy < 0 ? 1 : -1);
+    }
+  }
+}, {passive: true});
+
+// Gamepad Polling
+let gpLast = 0;
+function pollGP(){
+  const now = performance.now();
+  if(now - gpLast >= 130){
+    gpLast = now;
+    const gps = navigator.getGamepads ? navigator.getGamepads() : [];
+    for(const gp of gps){
+      if(!gp) continue;
+      // D-Pad
+      if(gp.buttons[12]?.pressed) tryMove(0, 1);   // Up
+      if(gp.buttons[13]?.pressed) tryMove(0, -1);  // Down
+      if(gp.buttons[14]?.pressed) tryMove(-1, 0);  // Left
+      if(gp.buttons[15]?.pressed) tryMove(1, 0);   // Right
+      // A / B buttons to restart when dead
+      if((gp.buttons[0]?.pressed || gp.buttons[1]?.pressed) && state === 'dead'){
+        startGame(mode);
+      }
+      // Analog Stick
+      const ax = gp.axes[0], ay = gp.axes[1];
+      if(ax < -0.55) tryMove(-1, 0);
+      else if(ax > 0.55) tryMove(1, 0);
+      else if(ay < -0.55) tryMove(0, 1);   // Stick up -> forward
+      else if(ay > 0.55) tryMove(0, -1);  // Stick down -> back
+    }
+  }
+  requestAnimationFrame(pollGP);
+}
+pollGP();
+
+// ═══════════════════════════════════════════════════
+//  MENU & BUTTON WIRING
+// ═══════════════════════════════════════════════════
+document.getElementById('btn-play').onclick = () => startGame('normal');
+document.getElementById('btn-daily').onclick = () => startGame('daily');
+document.getElementById('go-again').onclick = () => startGame(mode);
+document.getElementById('go-menu').onclick = () => {
+  state = 'menu';
+  document.getElementById('gover').classList.remove('vis');
+  document.getElementById('menu').classList.remove('hidden');
+  document.getElementById('touch').classList.remove('vis');
+  document.getElementById('mode-pill').style.display = 'none';
+  stopMusic();
+};
+document.getElementById('t-restart').onclick = () => startGame(mode);
+document.getElementById('btn-ctrl').onclick = () => {
+  alert(
+    '🐧 LAVA HOP — HOW TO PLAY\n\n' +
+    '🎮 CONTROLS:\n' +
+    '• ⬆️/W: Hop Forward\n' +
+    '• ⬇️/S: Hop Back\n' +
+    '• ⬅️/A, ➡️/D: Hop Left / Right\n' +
+    '• Tap Screen or Swipe on Mobile\n' +
+    '• Gamepad D-pad / Left Stick supported\n' +
+    '• R: Instant Restart\n\n' +
+    '🌋 RULES:\n' +
+    '• Hop across roads, railway tracks, and molten lava!\n' +
+    '• Lava is instant death — cross only on floating rocks, basalt slabs, and drifting logs!\n' +
+    '• Keep moving! Staying still triggers the swooping Magma Predator!\n' +
+    '• Build combos with consecutive hops, near misses, and gold coins!\n' +
+    '• Daily Challenge: Fixed seed map identical for all players today!'
+  );
+};
+
+// Daily Challenge UI Setup
+(function setupDailyInfo(){
+  const d = new Date();
+  document.getElementById('ddate').textContent = d.toLocaleDateString(undefined, {
+    weekday: 'long', month: 'short', day: 'numeric', year: 'numeric'
+  });
+  const k = dailyKey();
+  const best = localStorage.getItem(k) || 0;
+  document.getElementById('dtitle').textContent = `📅 DAILY CHALLENGE${best > 0 ? ' — Best: ' + best : ''}`;
+  document.getElementById('h-best').textContent = pb;
+})();
+
+// ═══════════════════════════════════════════════════
+//  START BACKGROUND PREVIEW & MAIN LOOP
+// ═══════════════════════════════════════════════════
+rng = new RNG(54321);
+genRows(0, 24);
+
+pengMesh = makePenguin();
+pengMesh.position.set(0, 0, 2);
+scene.add(pengMesh);
+
+cam.position.set(0, 8.5, -4.5);
+cam.lookAt(0, 0.5, 3.5);
+
+loop();
+</script>
+</body>
