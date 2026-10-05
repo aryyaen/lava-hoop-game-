@@ -28,7 +28,8 @@ jobs:
         run: |
           rm -rf _site
           mkdir _site
-          unzip -o lava-hop-game.zip -d _site
+          cp index.html _site/index.html
+          unzip -p lava-hop-game.zip death_sound.mp3 > _site/death_sound.mp3
           touch _site/.nojekyll
 
       - name: Configure GitHub Pages
